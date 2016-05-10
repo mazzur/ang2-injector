@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES5",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "sourceMap": true,
+    "removeComments": true,
+    "declaration": true,
+    "outDir": "./dist"
+  },
+  "exclude": [
+    "node_modules"
+  ],
+  "files": [
+    "./typings/main.d.ts",
+    "./src/injector.ts",
+    "./src/injector.spec.ts"
+  ]
+}
