@@ -1,43 +1,59 @@
 import 'reflect-metadata';
+import provide, {Provider} from './provider';
 
 class InternalInjector {
-    private providersMap:any = {};
-    private providerInstancesMap:any = {};
+    private providers:any = new Map();
+    private providerInstances:any = new Map();
 
-    constructor(providers:Array<any>) {
-        providers.forEach(provider => {
-            this.providersMap[provider.name] = provider;
+    constructor(providerDescriptors:Array<any>) {
+        providerDescriptors.forEach(providerDescriptor => {
+            if (providerDescriptor instanceof Provider) {
+                this.providers.set(providerDescriptor.token, providerDescriptor);
+            }
+            else {
+                const provider = provide(providerDescriptor, {
+                    useClass: providerDescriptor
+                });
+                this.providers.set(provider.token, provider);
+            }
         });
     }
 
-    public get(Provider:any):any {
-        if (!this.providerInstancesMap[Provider.name]) {
-            if (!this.providersMap[Provider.name]) {
+    public get(token:any):any {
+        if (!this.providerInstances.has(token)) {
+            if (!this.providers.has(token)) {
                 return null;
             }
 
-            this.providerInstancesMap[Provider.name] = this.resolveDependencies(Provider);
+            const provider = this.providers.get(token);
+            this.providerInstances.set(token, this.resolveDependencies(provider));
         }
 
-        return this.providerInstancesMap[Provider.name];
+        return this.providerInstances.get(token);
     }
 
-    private resolveDependencies(Provider:any):any {
-        const dependencyTokens = Reflect.getMetadata('design:paramtypes', Provider);
-
-        const params = Reflect.getMetadata('parameters', Provider);
-
-        if (!dependencyTokens) {
-            return new Provider();
+    private resolveDependencies(provider:any):any {
+        if (provider.useValue) {
+            return provider.useValue;
         }
+        else if (provider.useClass) {
+            const cls = provider.useClass;
+            const dependencyTokens = Reflect.getMetadata('design:paramtypes', cls);
 
-        const dependencies = dependencyTokens.map((paramType, i) => {
-            if (Array.isArray(params) && Array.isArray(params[i]) && params[i].length) {
-                return this.get(params[i][0].token);
+            const params = Reflect.getMetadata('parameters', cls);
+
+            if (!dependencyTokens) {
+                return new cls();
             }
-            return this.get(paramType);
-        });
-        return new Provider(...dependencies);
+
+            const dependencies = dependencyTokens.map((paramType, i) => {
+                if (Array.isArray(params) && Array.isArray(params[i]) && params[i].length) {
+                    return this.get(params[i][0].token);
+                }
+                return this.get(paramType);
+            });
+            return new cls(...dependencies);
+        }
     }
 }
 

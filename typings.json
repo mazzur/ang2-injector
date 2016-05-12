@@ -1,5 +1,6 @@
 {
   "ambientDependencies": {
+    "es6-map-polyfill": "github:nozzlegear/es6-map-polyfill.d.ts",
     "jasmine": "registry:dt/jasmine#2.2.0+20160505161446"
   }
 }
