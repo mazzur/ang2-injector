@@ -1,21 +1,49 @@
 export class Provider {
-    token:any;
     useValue:any;
     useClass:any;
+    useFactory:Function;
+    useExisting:any;
+    deps:Object[];
+    multi: Boolean;
 
-    constructor(token:any, {useValue, useClass}: {useValue?: any, useClass?:any}) {
-        this.token = token;
+    constructor(public token:any, {
+        useValue,
+        useClass,
+        useFactory,
+        useExisting,
+        deps,
+        multi
+        }: {
+        useValue?: any,
+        useClass?:any,
+        useFactory?: Function,
+        useExisting?: any,
+        deps?: Object[],
+        multi?: Boolean
+    }) {
         this.useValue = useValue;
         this.useClass = useClass;
+        this.useFactory = useFactory;
+        this.useExisting = useExisting;
+        this.deps = deps;
+        this.multi = multi;
     }
 }
 
 export default function provide(token:any, {
     useValue,
-    useClass
+    useClass,
+    useFactory,
+    useExisting,
+    deps,
+    multi
     }: {
     useValue?: any,
-    useClass?:any
+    useClass?:any,
+    useFactory?: Function,
+    useExisting?: any,
+    deps?: Object[],
+    multi?: Boolean
 }):Provider {
-    return new Provider(token, {useValue, useClass});
+    return new Provider(token, {useValue, useClass, useFactory, useExisting, deps, multi});
 }

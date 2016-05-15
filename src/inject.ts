@@ -1,18 +1,14 @@
 import 'reflect-metadata';
 
-export default function ParamDecoratorFactory(classToInject:any):any {
+export default function ParamDecoratorFactory(classToInject:any):Function {
     return function ParamDecorator(cls:Function, unusedKey:any, index:any):Function {
-        let params:any[][] = Reflect.getMetadata('parameters', cls);
-        params = params || [];
+        let paramsMetadata:any[][] = Reflect.getMetadata('parameters', cls) || [];
 
-        const annotationInstance = {
+        paramsMetadata[index] = (paramsMetadata[index] || []).concat([{
             token: classToInject
-        };
+        }]);
 
-        params[index] = params[index] || [];
-        params[index].push(annotationInstance);
-
-        Reflect.defineMetadata('parameters', params, cls);
+        Reflect.defineMetadata('parameters', paramsMetadata, cls);
 
         return cls;
     }
