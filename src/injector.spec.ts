@@ -3,6 +3,7 @@ import Injectable from './injectable';
 import Optional from './optional';
 import Inject from './inject';
 import provide from './provider';
+import forwardRef from './forwardRef';
 
 class Engine {
 }
@@ -151,5 +152,50 @@ describe('Injector', () => {
         const cars = injector.get(Car);
         expect(cars.length).toEqual(1);
         expect(cars[0]).toBe(injector.get(SportsCar));
+    });
+
+    it('should handle forwardRef in useExisting', () => {
+        const injector = createInjector([
+            provide('originalService', {useClass: forwardRef(() => Service)}),
+            provide('aliasedService', {useExisting: <any>forwardRef(() => 'originalService')})
+        ]);
+
+        class Service {
+        }
+        expect(injector.get('aliasedService') instanceof Service).toBe(true);
+    });
+
+    it('should support optional dependencies', () => {
+        const injector = createInjector([CarWithOptionalEngine]);
+
+        const car = injector.get(CarWithOptionalEngine);
+        expect(car.engine).toEqual(null);
+    });
+
+    it("should flatten passed-in providers", () => {
+        const injector = createInjector([[[Engine, Car]]]);
+
+        const car = injector.get(Car);
+        expect(car instanceof Car).toBe(true);
+    });
+
+    it("should use the last provider when there are multiple providers for same token", () => {
+        const injector = createInjector(
+            [provide(Engine, {useClass: Engine}), provide(Engine, {useClass: TurboEngine})]);
+
+        expect(injector.get(Engine) instanceof TurboEngine).toBe(true);
+    });
+
+    it('should use non-type tokens', () => {
+        const injector = createInjector([provide('token', {useValue: 'value'})]);
+
+        expect(injector.get('token')).toEqual('value');
+    });
+
+    it('should provide itself', () => {
+        const parent = createInjector([]);
+        const child = parent.resolveAndCreateChild([]);
+
+        expect(child.get(Injector)).toBe(child);
     });
 });

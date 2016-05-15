@@ -1,12 +1,19 @@
 import 'reflect-metadata';
 import provide, {Provider} from './provider';
+import {resolveForwardRef} from './forwardRef';
 
 class InternalInjector {
     private providers:Map<any, Provider | Provider[]> = new Map();
     private providerInstances:Map<any, any> = new Map();
+    private ownProviderDescriptor = {
+        provide: Injector,
+        useValue: this
+    };
 
     constructor(providerDescriptors:Array<any>) {
-        providerDescriptors.forEach(this.registerProvider.bind(this));
+        providerDescriptors
+            .concat([this.ownProviderDescriptor])
+            .forEach(this.registerProvider.bind(this));
     }
 
     public get(token:any):any {
@@ -22,8 +29,15 @@ class InternalInjector {
         return this.providerInstances.get(token);
     }
 
+    public resolveAndCreateChild(providers:any[]):InternalInjector {
+        return Injector.resolve(providers);
+    }
+
     private registerProvider(providerDescriptor:any):void {
-        if (providerDescriptor instanceof Provider) {
+        if (Array.isArray(providerDescriptor)) {
+            providerDescriptor.forEach(this.registerProvider.bind(this));
+        }
+        else if (providerDescriptor instanceof Provider) {
             this.providers.set(providerDescriptor.token, providerDescriptor);
         }
         else if (providerDescriptor.provide) {
@@ -61,13 +75,13 @@ class InternalInjector {
             return provider.map(this.instantiate.bind(this));
         }
         else if (provider.useClass) {
-            return this.instantiateClass(provider.useClass);
+            return this.instantiateClass(resolveForwardRef(provider.useClass));
         }
         else if (provider.useFactory) {
             return provider.useFactory(...provider.deps.map(this.get.bind(this)));
         }
         else if (provider.useExisting) {
-            return this.get(provider.useExisting);
+            return this.get(resolveForwardRef(provider.useExisting));
         }
         else {
             return (<Provider>provider).useValue;
